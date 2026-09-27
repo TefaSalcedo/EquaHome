@@ -207,9 +207,8 @@ class _TodaySection extends ConsumerWidget {
               ),
               error: (e, _) => Text(apiErrorMessage(e)),
               data: (list) {
-                final open = list
-                    .where((t) => t.status != 'done' && t.status != 'skipped')
-                    .toList();
+                final open =
+                    list.where((t) => t.status != 'done').toList();
                 final done =
                     list.where((t) => t.status == 'done').toList();
                 if (list.isEmpty) {
@@ -291,7 +290,7 @@ class _QuickTaskDialog extends ConsumerStatefulWidget {
 
 class _QuickTaskDialogState extends ConsumerState<_QuickTaskDialog> {
   final _title = TextEditingController();
-  final _minutes = TextEditingController(text: '15');
+  final _minutes = TextEditingController();
   bool _saving = false;
 
   @override
@@ -324,6 +323,7 @@ class _QuickTaskDialogState extends ConsumerState<_QuickTaskDialog> {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               labelText: 'Minutos que toma',
+              hintText: '15',
             ),
           ),
         ],
@@ -440,7 +440,7 @@ class _DayTaskCard extends ConsumerWidget {
               child: TextButton.icon(
                 icon: const Icon(Icons.undo, size: 18),
                 label: const Text('Recuperar'),
-                onPressed: () => _run(context, () => notifier.select(task.id)),
+                onPressed: () => _run(context, () => notifier.restore(task.id)),
               ),
             )
           else if (!taken)

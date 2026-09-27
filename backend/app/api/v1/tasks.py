@@ -240,6 +240,20 @@ def skip_task(
     return _task_out(task)
 
 
+@router.post("/tasks/{task_id}/restore", response_model=TaskOut)
+def restore_task(
+    task_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task, _ = _require_task_membership(task_id, user, db)
+    if task.status != TaskStatus.skipped:
+        raise HTTPException(409, "Solo se recuperan tareas pasadas a mañana")
+    task.status = TaskStatus.pending
+    db.commit()
+    return _task_out(task)
+
+
 # --- Preferencias del miembro ---
 
 

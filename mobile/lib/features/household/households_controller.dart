@@ -48,10 +48,26 @@ class HouseholdsController extends AsyncNotifier<List<Membership>> {
     ref.invalidateSelf();
   }
 
+  /// Hogar activo calculado desde el propio estado (leer
+  /// activeMembershipProvider aquí crearía un ciclo: ese provider
+  /// observa este controller).
+  String _activeHouseholdId() {
+    final list = state.value ?? const <Membership>[];
+    if (list.isEmpty) throw StateError('Sin hogar');
+    final selected = ref.read(selectedHouseholdProvider);
+    return list
+        .firstWhere(
+          (m) => m.householdId == selected,
+          orElse: () =>
+              list.firstWhere((m) => m.isPrimary, orElse: () => list.first),
+        )
+        .householdId;
+  }
+
   /// Actualiza el perfil de miembro en el hogar activo
   /// (disponibilidad, tipo, capacidad, habitaciones asignadas).
   Future<void> updateMemberProfile(Map<String, dynamic> data) async {
-    final hid = ref.read(activeMembershipProvider)!.householdId;
+    final hid = _activeHouseholdId();
     await ref
         .read(dioProvider)
         .patch('/api/v1/members/me/households/$hid/profile', data: data);

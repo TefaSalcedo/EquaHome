@@ -67,6 +67,12 @@ class TodayTasksController extends AsyncNotifier<List<DayTask>> {
     await ref.read(dioProvider).post('/api/v1/tasks/$taskId/skip');
     _refresh();
   }
+
+  /// Recupera una tarea que se pasó a mañana (vuelve a pendiente).
+  Future<void> restore(String taskId) async {
+    await ref.read(dioProvider).post('/api/v1/tasks/$taskId/restore');
+    _refresh();
+  }
 }
 
 /// Carga del día: minutos ponderados por persona, esperado según capacidad

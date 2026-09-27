@@ -94,6 +94,10 @@ def test_skip_and_cannot_do_preference(client):
     r = client.post(f"/api/v1/tasks/{task['id']}/skip", headers=auth(tokens))
     assert r.json()["status"] == "skipped"
 
+    # Una tarea pasada a mañana se recupera y vuelve a estar disponible.
+    r = client.post(f"/api/v1/tasks/{task['id']}/restore", headers=auth(tokens))
+    assert r.json()["status"] == "pending"
+
 
 def test_load_balance_two_members(client):
     tokens_a = register(client, "a@test.com", "Ana")

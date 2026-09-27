@@ -19,6 +19,10 @@ description: How to run and E2E-test the EquaHome monorepo (FastAPI backend + Fl
 - `flutter_secure_storage` WORKS on web (lockfile includes `flutter_secure_storage_web`); token persistence and reload-session-restore are testable.
 - `API_BASE_URL` defaults to `http://localhost:8000` — correct for web; Android emulator needs `--dart-define=API_BASE_URL=http://10.0.2.2:8000`.
 - Auth form quirk: login/register share controllers — switching modes retains field text. Always ctrl+a before retyping fields.
+- The "Tarea puntual" dialog PRE-FILLS minutes with `15` — ctrl+a before typing or the digits append (e.g. typing 10 → 1510).
+- After switching backend branches: restart uvicorn AND run `(cd backend && .venv/bin/alembic upgrade head)` — new endpoints/tables are migration-gated.
+- Screenshot-vs-DOM coordinate mismatch: the browser viewport may be larger than the 1024x768 screenshot space (seen: 1600x1069, ~1.56x scale). Small tap targets (IconButtons, chips) can be missed by several px. Reliable fix: enable semantics once via `document.querySelector('flt-semantics-placeholder').click()` (browser_console), then read each target's `getBoundingClientRect()` and click `x/1.5625, (y+~80)/1.5625` in screenshot coords — or just click a few px right of the visual center for right-edge icons.
+- Debugging silent client failures: snackbar "Algo salió mal" + no request in the uvicorn log means the exception happened before dio sent. Temporarily print the caught error (`print('ERR: $e\n$st')`) and re-read browser console — caught exceptions don't surface otherwise. Known fase-04 instance: `updateMemberProfile` (households_controller) calls `ref.read(activeMembershipProvider)` which itself watches `householdsControllerProvider` → Riverpod 3 throws CircularDependencyError, so profile availability save can never send.
 - Test users seeded by E2E runs: ana@test.com / password123 (owner of "Casa Principal"), bruno@test.com / password123 (member).
 
 ## Devin Secrets Needed
