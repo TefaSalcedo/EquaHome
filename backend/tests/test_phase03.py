@@ -1,28 +1,12 @@
 """Fase 03: plantillas de tareas con condiciones y estimado calculado."""
 
-
-def _register(client, email="ana@test.com"):
-    r = client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "segura123", "display_name": "Ana"},
-    )
-    return r.json()["access_token"]
-
-
-def _household(client, token):
-    r = client.post("/api/v1/households", json={"name": "Casa Centro"},
-                    headers={"Authorization": f"Bearer {token}"})
-    return r.json()["id"]
-
-
-def _auth(token):
-    return {"Authorization": f"Bearer {token}"}
+from tests.helpers import auth, create_household, register
 
 
 def test_template_with_conditions_estimate(client):
     """Criterio de fase: 'Lavar ropa' 25 + 10 + 15 + 10 → 60 min estimado."""
-    token = _register(client)
-    hid = _household(client, token)
+    tokens = register(client, "ana@test.com")
+    hid = create_household(client, tokens)
 
     r = client.post(
         f"/api/v1/households/{hid}/task-templates",
@@ -38,7 +22,7 @@ def test_template_with_conditions_estimate(client):
                 {"label": "Doblar y guardar", "extra_minutes": 10, "applies": True},
             ],
         },
-        headers=_auth(token),
+        headers=auth(tokens),
     )
     assert r.status_code == 201, r.text
     t = r.json()
@@ -49,8 +33,8 @@ def test_template_with_conditions_estimate(client):
 
 
 def test_conditions_toggle_and_replace(client):
-    token = _register(client)
-    hid = _household(client, token)
+    tokens = register(client, "ana@test.com")
+    hid = create_household(client, tokens)
     t = client.post(
         f"/api/v1/households/{hid}/task-templates",
         json={
@@ -59,57 +43,57 @@ def test_conditions_toggle_and_replace(client):
             "effort": "low",
             "conditions": [{"label": "Sartén pegada", "extra_minutes": 5, "applies": False}],
         },
-        headers=_auth(token),
+        headers=auth(tokens),
     ).json()
     assert t["estimated_minutes"] == 15
 
     r = client.put(
         f"/api/v1/task-templates/{t['id']}/conditions",
         json=[{"label": "Sartén pegada", "extra_minutes": 5, "applies": True}],
-        headers=_auth(token),
+        headers=auth(tokens),
     )
     assert r.json()["estimated_minutes"] == 20
 
 
 def test_template_update_and_room_link(client):
-    token = _register(client)
-    hid = _household(client, token)
+    tokens = register(client, "ana@test.com")
+    hid = create_household(client, tokens)
     room = client.post(
         f"/api/v1/households/{hid}/rooms",
         json={"name": "Cocina", "type": "kitchen"},
-        headers=_auth(token),
+        headers=auth(tokens),
     ).json()
 
     t = client.post(
         f"/api/v1/households/{hid}/task-templates",
         json={"name": "Barrer", "room_id": room["id"], "base_minutes": 10, "effort": "low"},
-        headers=_auth(token),
+        headers=auth(tokens),
     ).json()
     assert t["room_name"] == "Cocina"
 
     r = client.patch(
         f"/api/v1/task-templates/{t['id']}",
         json={"effort": "high", "active": False},
-        headers=_auth(token),
+        headers=auth(tokens),
     )
     body = r.json()
     assert body["active"] is False and body["effort_weight"] == 1.35
 
 
 def test_template_rejects_foreign_room(client):
-    token_a = _register(client, "a@test.com")
-    token_b = _register(client, "b@test.com")
-    hid_a = _household(client, token_a)
-    hid_b = _household(client, token_b)
+    tokens_a = register(client, "a@test.com")
+    tokens_b = register(client, "b@test.com")
+    hid_a = create_household(client, tokens_a)
+    hid_b = create_household(client, tokens_b)
     room_b = client.post(
         f"/api/v1/households/{hid_b}/rooms",
         json={"name": "Sala", "type": "living"},
-        headers=_auth(token_b),
+        headers=auth(tokens_b),
     ).json()
 
     r = client.post(
         f"/api/v1/households/{hid_a}/task-templates",
         json={"name": "X", "room_id": room_b["id"], "base_minutes": 5},
-        headers=_auth(token_a),
+        headers=auth(tokens_a),
     )
     assert r.status_code == 422
