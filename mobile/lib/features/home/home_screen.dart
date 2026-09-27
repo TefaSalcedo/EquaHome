@@ -421,6 +421,7 @@ class _DayTaskCard extends ConsumerWidget {
               taskCategoryLabels[task.category] ?? task.category,
               'Esfuerzo ${effortLabels[task.effort] ?? task.effort}',
               if (task.status == 'skipped') 'Pasada para mañana',
+              if (task.status == 'carried_over') 'Viene de ayer',
             ].join(' · '),
             style: theme.textTheme.bodySmall,
           ),

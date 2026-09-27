@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -30,11 +30,15 @@ from app.schemas.task import (
     PreferenceOut,
     TaskCreate,
     TaskOut,
+    WeekDay,
+    WeekOut,
 )
+from app.services.plan import materialize_day
 
 router = APIRouter(tags=["tasks"])
 
-_UNSELECTABLE = (TaskStatus.done, TaskStatus.skipped, TaskStatus.carried_over)
+# carried_over sigue siendo seleccionable: es una pendiente que viene de ayer.
+_UNSELECTABLE = (TaskStatus.done, TaskStatus.skipped)
 
 
 def _task_out(task: Task) -> TaskOut:
@@ -89,6 +93,9 @@ def list_tasks(
     db: Session = Depends(get_db),
 ):
     day = on_date or date.today()
+    today = date.today()
+    materialize_day(db, membership.household_id, day, carry=day == today)
+    db.commit()
     tasks = (
         db.query(Task)
         .filter(Task.household_id == membership.household_id, Task.scheduled_date == day)
@@ -96,6 +103,41 @@ def list_tasks(
         .all()
     )
     return [_task_out(t) for t in tasks]
+
+
+@router.get("/households/{household_id}/week", response_model=WeekOut)
+def week_view(
+    start: date | None = Query(default=None),
+    membership: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Vista semanal para el calendario: propone cada día y resume minutos."""
+    today = date.today()
+    first = start or (today - timedelta(days=today.weekday()))
+    first = first - timedelta(days=first.weekday())
+    days: list[WeekDay] = []
+    for offset in range(7):
+        day = first + timedelta(days=offset)
+        materialize_day(db, membership.household_id, day, carry=day == today)
+        db.commit()
+        tasks = (
+            db.query(Task)
+            .filter(
+                Task.household_id == membership.household_id,
+                Task.scheduled_date == day,
+            )
+            .order_by(Task.created_at)
+            .all()
+        )
+        days.append(
+            WeekDay(
+                date=day,
+                total_minutes=round(sum(t.weighted_minutes for t in tasks), 1),
+                done_count=sum(1 for t in tasks if t.status == TaskStatus.done),
+                tasks=[_task_out(t) for t in tasks],
+            )
+        )
+    return WeekOut(start=first, days=days)
 
 
 @router.post("/households/{household_id}/tasks", response_model=TaskOut, status_code=201)
@@ -247,7 +289,7 @@ def restore_task(
     db: Session = Depends(get_db),
 ):
     task, _ = _require_task_membership(task_id, user, db)
-    if task.status != TaskStatus.skipped:
+    if task.status not in (TaskStatus.skipped, TaskStatus.carried_over):
         raise HTTPException(409, "Solo se recuperan tareas pasadas a mañana")
     task.status = TaskStatus.pending
     db.commit()
@@ -329,7 +371,14 @@ def household_load(
         .filter(
             Task.household_id == membership.household_id,
             Task.scheduled_date == day,
-            Task.status.in_([TaskStatus.pending, TaskStatus.selected, TaskStatus.done]),
+            Task.status.in_(
+                [
+                    TaskStatus.pending,
+                    TaskStatus.selected,
+                    TaskStatus.done,
+                    TaskStatus.carried_over,
+                ]
+            ),
         )
         .all()
     )
@@ -368,7 +417,10 @@ def household_load(
     notice = None
     if not single:
         unassigned = [
-            t for t in tasks if not t.assignments and t.status == TaskStatus.pending
+            t
+            for t in tasks
+            if not t.assignments
+            and t.status in (TaskStatus.pending, TaskStatus.carried_over)
         ]
         worst = min(loads, key=lambda load: load.difference_minutes or 0)
         if worst.difference_minutes is not None and worst.difference_minutes < -5 and unassigned:
