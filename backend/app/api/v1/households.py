@@ -105,14 +105,14 @@ def join_household(
         .first()
     )
     if invitation is None or invitation.status != InviteStatus.active:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Invalid invite code")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Código de invitación inválido")
     if invitation.expires_at < datetime.now(UTC):
-        raise HTTPException(status.HTTP_410_GONE, "Invite code expired")
+        raise HTTPException(status.HTTP_410_GONE, "El código de invitación expiró")
 
     household = invitation.household
     existing = next((m for m in household.members if m.user_id == user.id), None)
     if existing is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Already a member of this household")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya eres miembro de este hogar")
 
     membership = HouseholdMember(
         household_id=household.id,

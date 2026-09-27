@@ -18,14 +18,14 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> User:
     if credentials is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing bearer token")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Falta el token de autenticación")
     try:
         user_id = decode_token(credentials.credentials, "access")
     except jwt.PyJWTError:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token") from None
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token inválido o expirado") from None
     user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario no encontrado")
     return user
 
 
@@ -40,5 +40,5 @@ def get_membership(
         .first()
     )
     if membership is None:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not a member of this household")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No eres miembro de este hogar")
     return membership

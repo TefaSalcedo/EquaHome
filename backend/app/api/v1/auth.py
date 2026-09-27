@@ -30,7 +30,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     email = body.email.lower()
     exists = db.query(User).filter(func.lower(User.email) == email).first()
     if exists:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este correo ya está registrado")
     user = User(
         email=email,
         password_hash=hash_password(body.password),
@@ -45,7 +45,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(func.lower(User.email) == body.email.lower()).first()
     if user is None or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Correo o contraseña incorrectos")
     return _issue_tokens(user)
 
 
@@ -54,10 +54,10 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
     try:
         user_id = decode_token(body.refresh_token, "refresh")
     except jwt.PyJWTError:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired refresh token") from None
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token de refresco inválido o expirado") from None
     user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario no encontrado")
     return _issue_tokens(user)
 
 

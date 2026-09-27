@@ -157,7 +157,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   TextButton(
                     onPressed: _loading
                         ? null
-                        : () => setState(() => _isLogin = !_isLogin),
+                        : () => setState(() {
+                              _isLogin = !_isLogin;
+                              _nameController.clear();
+                              _emailController.clear();
+                              _passwordController.clear();
+                            }),
                     child: Text(
                       _isLogin
                           ? '¿No tienes cuenta? Regístrate'

@@ -81,6 +81,6 @@ def leave_household(
     if membership.role == MemberRole.owner:
         owners = [m for m in membership.household.members if m.role == MemberRole.owner]
         if len(owners) == 1 and len(membership.household.members) > 1:
-            raise HTTPException(409, "Transfer ownership before leaving a household with other members")
+            raise HTTPException(409, "Transfiere la propiedad antes de salir de un hogar con más miembros")
     db.delete(membership)
     db.commit()

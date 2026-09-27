@@ -82,8 +82,15 @@ class _AuthInterceptor extends Interceptor {
 String apiErrorMessage(Object error) {
   if (error is DioException) {
     final data = error.response?.data;
-    if (data is Map && data['detail'] is String) {
-      return data['detail'] as String;
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail is String) return detail;
+      if (detail is List && detail.isNotEmpty) {
+        final msg = detail.first;
+        if (msg is Map && msg['msg'] is String) {
+          return (msg['msg'] as String).replaceFirst('Value error, ', '');
+        }
+      }
     }
     if (error.type == DioExceptionType.connectionError ||
         error.type == DioExceptionType.connectionTimeout) {
