@@ -144,6 +144,9 @@ class Task(Base):
         default=TaskCategory.general,
     )
     scheduled_date: Mapped[date] = mapped_column(Date, index=True)
+    # Fecha original para deduplicar materializaciones: el carry-over mueve
+    # scheduled_date pero esta se conserva.
+    first_scheduled_date: Mapped[date] = mapped_column(Date)
     status: Mapped[TaskStatus] = mapped_column(
         Enum(TaskStatus, name="task_status"), default=TaskStatus.pending
     )

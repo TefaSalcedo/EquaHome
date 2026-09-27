@@ -108,6 +108,33 @@ def test_skipped_carries_as_no_puedo_hoy(client):
     assert carried[0]["status"] == "carried_over"
 
 
+def test_week_never_materializes_before_template_creation(client):
+    """Regresión: una plantilla creada hoy no debe llenar días pasados."""
+    tokens = register(client, "g1@test.com")
+    hid = create_household(client, tokens)
+    _create_template(client, tokens, hid, "Fregar platos")
+
+    resp = client.get(f"/api/v1/households/{hid}/week", headers=auth(tokens))
+    assert resp.status_code == 200
+    for day in resp.json()["days"]:
+        count = sum(t["title"] == "Fregar platos" for t in day["tasks"])
+        assert count <= 1
+    total = sum(
+        t["title"] == "Fregar platos"
+        for d in resp.json()["days"]
+        for t in d["tasks"]
+    )
+    assert total == 1
+    # Volver a pedir la semana tras el carry no duplica.
+    resp = client.get(f"/api/v1/households/{hid}/week", headers=auth(tokens))
+    total = sum(
+        t["title"] == "Fregar platos"
+        for d in resp.json()["days"]
+        for t in d["tasks"]
+    )
+    assert total == 1
+
+
 def test_week_endpoint_returns_seven_days(client):
     tokens = register(client, "e1@test.com")
     hid = create_household(client, tokens)

@@ -27,6 +27,9 @@ _OPEN_STATUSES = (
 
 def _applies_on(template: TaskTemplate, day: date) -> bool:
     """Regla de programación por frecuencia."""
+    # Nunca materializa días anteriores a la creación de la plantilla.
+    if day < template.created_at.date():
+        return False
     if template.frequency == Frequency.daily:
         return True
     if template.frequency == Frequency.weekly:
@@ -36,7 +39,7 @@ def _applies_on(template: TaskTemplate, day: date) -> bool:
         last_day = calendar.monthrange(day.year, day.month)[1]
         return day.day == min(template.created_at.day, last_day)
     # once: aparece el primer día que se materializa tras su creación
-    return day >= template.created_at.date()
+    return True
 
 
 def _period_bounds(frequency: Frequency, day: date) -> tuple[date, date]:
@@ -53,12 +56,17 @@ def _period_bounds(frequency: Frequency, day: date) -> tuple[date, date]:
 def _already_materialized(
     db: Session, household_id, template: TaskTemplate, day: date
 ) -> bool:
+    # El dedup mira la fecha original: una tarea arrastrada a hoy sigue
+    # contando para su período, así el carry-over nunca duplica.
     query = db.query(Task.id).filter(
         Task.household_id == household_id, Task.template_id == template.id
     )
     if template.frequency != Frequency.once:
         start, end = _period_bounds(template.frequency, day)
-        query = query.filter(Task.scheduled_date >= start, Task.scheduled_date <= end)
+        query = query.filter(
+            Task.first_scheduled_date >= start,
+            Task.first_scheduled_date <= end,
+        )
     return query.first() is not None
 
 
@@ -107,6 +115,7 @@ def materialize_day(db: Session, household_id, day: date, *, carry: bool) -> Non
                 effort=template.effort,
                 category=template.category,
                 scheduled_date=day,
+                first_scheduled_date=day,
                 origin=TaskOrigin.template,
             )
         )

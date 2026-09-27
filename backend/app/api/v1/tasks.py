@@ -151,6 +151,7 @@ def create_task(
         scheduled_date=body.scheduled_date or date.today(),
         created_by_member_id=membership.id,
     )
+    task.first_scheduled_date = task.scheduled_date
     if body.template_id is not None:
         template = db.get(TaskTemplate, body.template_id)
         if template is None or template.household_id != membership.household_id:
