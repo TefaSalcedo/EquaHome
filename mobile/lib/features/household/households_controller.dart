@@ -71,8 +71,9 @@ class HouseholdsController extends AsyncNotifier<List<Membership>> {
     await ref
         .read(dioProvider)
         .patch('/api/v1/members/me/households/$hid/profile', data: data);
+    // Solo invalidateSelf: al reconstruirse las membresías, el detalle del
+    // hogar se refresca en cascada vía activeMembershipProvider.
     ref.invalidateSelf();
-    ref.invalidate(householdDetailProvider);
   }
 }
 
