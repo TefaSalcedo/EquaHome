@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'design_system/theme.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_screen.dart';
-import 'features/home/home_screen.dart';
+import 'features/home/home_shell.dart';
 import 'features/household/household_setup_screen.dart';
 import 'features/household/households_controller.dart';
 
@@ -43,7 +43,7 @@ class _AuthGate extends ConsumerWidget {
     if (list.isEmpty) {
       return const HouseholdSetupScreen();
     }
-    return const HomeScreen();
+    return const HomeShell();
   }
 }
 
