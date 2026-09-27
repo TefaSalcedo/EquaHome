@@ -20,13 +20,14 @@ class PhotosController {
     required Uint8List bytes,
     required String filename,
     String? roomId,
+    String purpose = 'room_scan',
   }) async {
     final hid = _ref.read(activeMembershipProvider)!.householdId;
     final res = await _ref.read(dioProvider).post(
       '/api/v1/households/$hid/photos',
       data: FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes, filename: filename),
-        'purpose': 'room_scan',
+        'purpose': purpose,
         'room_id': ?roomId,
       }),
     );

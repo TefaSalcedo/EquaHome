@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
 import '../../core/labels.dart';
@@ -9,7 +10,9 @@ import '../../design_system/colors.dart';
 import '../../design_system/theme.dart';
 import '../auth/auth_controller.dart';
 import '../household/households_controller.dart';
+import '../house/photos_controller.dart';
 import '../profile/profile_screen.dart';
+import 'assistant_controller.dart';
 import 'home_controller.dart';
 import 'nav_provider.dart';
 
@@ -73,6 +76,8 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: EquaSpace.lg),
               _TodaySection(tasks: tasks, myMemberId: me?.memberId),
+              const SizedBox(height: EquaSpace.lg),
+              const _AssistantCard(),
               const SizedBox(height: EquaSpace.lg),
               load.when(
                 loading: () => const SizedBox.shrink(),
@@ -169,6 +174,156 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+/// Cuéntale a la app en texto libre: interpreta, propone y la persona
+/// confirma. Nunca impone.
+class _AssistantCard extends ConsumerStatefulWidget {
+  const _AssistantCard();
+
+  @override
+  ConsumerState<_AssistantCard> createState() => _AssistantCardState();
+}
+
+class _AssistantCardState extends ConsumerState<_AssistantCard> {
+  final _text = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final text = _text.text.trim();
+    if (text.isEmpty) return;
+    setState(() => _sending = true);
+    try {
+      final result =
+          await ref.read(assistantControllerProvider).interpret(text);
+      if (!mounted) return;
+      await _showProposal(context, ref, result);
+      _text.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _showProposal(
+    BuildContext context,
+    WidgetRef ref,
+    InstructionResult result,
+  ) async {
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('La app propone'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(result.summary),
+            if (result.actions.isNotEmpty) ...[
+              const SizedBox(height: EquaSpace.md),
+              for (final a in result.actions)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: EquaSpace.xs),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.subdirectory_arrow_right, size: 16),
+                      const SizedBox(width: EquaSpace.xs),
+                      Expanded(child: Text(a.label)),
+                    ],
+                  ),
+                ),
+            ] else
+              const Padding(
+                padding: EdgeInsets.only(top: EquaSpace.md),
+                child: Text('(Sin cambios concretos por ahora)'),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Mejor no'),
+          ),
+          if (result.actions.isNotEmpty)
+            FilledButton(
+              key: const Key('applyProposal'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Aplicar'),
+            ),
+        ],
+      ),
+    );
+    if (apply != true || !context.mounted) return;
+    try {
+      final applied =
+          await ref.read(assistantControllerProvider).apply(result.actions);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(applied.join(' · '))),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(EquaSpace.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Cuéntale a la app', style: theme.textTheme.titleMedium),
+            const SizedBox(height: EquaSpace.xs),
+            Text(
+              'Ej. «mañana no estoy» o «paso la aspiradora a mañana». '
+              'La app propone; tú decides.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: EquaSpace.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('assistantInput'),
+                    controller: _text,
+                    decoration: const InputDecoration(
+                      hintText: 'Escribe aquí…',
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => _send(),
+                  ),
+                ),
+                const SizedBox(width: EquaSpace.sm),
+                FilledButton(
+                  key: const Key('assistantSend'),
+                  onPressed: _sending ? null : _send,
+                  child: const Text('Proponer'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Tareas de hoy: la parte central de la pantalla.
 class _TodaySection extends ConsumerWidget {
   const _TodaySection({required this.tasks, required this.myMemberId});
@@ -196,6 +351,12 @@ class _TodaySection extends ConsumerWidget {
                   icon: const Icon(Icons.bolt, size: 18),
                   label: const Text('Puntual'),
                   onPressed: () => _quickTask(context, ref),
+                ),
+                IconButton(
+                  key: const Key('dailyPhotoButton'),
+                  tooltip: 'Foto del cierre del día',
+                  icon: const Icon(Icons.photo_camera_outlined, size: 20),
+                  onPressed: () => _dailyPhoto(context, ref),
                 ),
               ],
             ),
@@ -277,6 +438,48 @@ class _TodaySection extends ConsumerWidget {
     );
     if (added == true) {
       ref.invalidate(todayTasksProvider);
+    }
+  }
+
+  /// Foto del cierre del día: evaluación orientativa, nunca para culpar.
+  Future<void> _dailyPhoto(BuildContext context, WidgetRef ref) async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+    );
+    if (file == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Analizando la foto…')),
+      );
+      final photos = ref.read(photosControllerProvider);
+      var photo = await photos.upload(
+        bytes: await file.readAsBytes(),
+        filename: file.name,
+        purpose: 'daily_check',
+      );
+      photo = await photos.analyze(photo.id);
+      if (!context.mounted) return;
+      messenger.hideCurrentSnackBar();
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Así se ve la casa'),
+          content: Text(
+            photo.analysis?.summary ?? 'Sin evaluación disponible.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
     }
   }
 }

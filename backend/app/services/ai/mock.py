@@ -38,7 +38,36 @@ class MockAIService(AIService):
     def interpret_instruction(
         self, text: str, context: dict[str, Any]
     ) -> dict[str, Any]:
+        """Reglas de ejemplo: devuelve acciones que /assistant/apply ejecuta."""
+        lower = text.lower()
+        if any(k in lower for k in ("no estoy", "no puedo", "no voy a estar")):
+            return {
+                "summary": (
+                    "Entendido. Propongo liberar las tareas que elegiste hoy "
+                    "para que cualquier otra persona pueda tomarlas."
+                ),
+                "actions": [{"type": "release_my_tasks"}],
+            }
+        if any(k in lower for k in ("pasar", "posponer", "para mañana")):
+            return {
+                "summary": "Propongo mover tus tareas elegidas de hoy a mañana.",
+                "actions": [{"type": "postpone_my_tasks"}],
+            }
+        if any(k in lower for k in ("agrega", "añade", "crea")):
+            return {
+                "summary": "Propongo crear esta tarea puntual para hoy.",
+                "actions": [
+                    {
+                        "type": "create_task",
+                        "title": text.strip()[:60],
+                        "estimated_minutes": 20,
+                    }
+                ],
+            }
         return {
-            "summary": f"Propuesta de ejemplo para: «{text}»",
-            "proposal": {"note": "El proveedor real se conecta en la fase 07."},
+            "summary": (
+                f"Propuesta de ejemplo para «{text}». Con el proveedor real "
+                "aquí iría la reorganización sugerida."
+            ),
+            "actions": [],
         }
