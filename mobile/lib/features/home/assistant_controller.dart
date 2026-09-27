@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../calendar/calendar_screen.dart';
 import '../household/households_controller.dart';
 import 'home_controller.dart';
 
@@ -76,6 +77,7 @@ class AssistantController {
     );
     _ref.invalidate(todayTasksProvider);
     _ref.invalidate(loadProvider);
+    _ref.invalidate(weekProvider);
     return (res.data['applied'] as List).cast<String>();
   }
 }
