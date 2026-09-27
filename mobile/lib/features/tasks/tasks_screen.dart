@@ -9,6 +9,11 @@ import '../../design_system/theme.dart';
 import '../house/house_controller.dart';
 import 'tasks_controller.dart';
 
+/// Minutos ponderados sin decimal cuando es entero (ej. 69) y con uno
+/// cuando no (ej. 57.5).
+String weightedMinutesLabel(double minutes) =>
+    minutes % 1 == 0 ? minutes.toStringAsFixed(0) : minutes.toStringAsFixed(1);
+
 /// Pestaña Tareas: plantillas con estimado real (base + condiciones que aplican)
 /// y ponderación por esfuerzo.
 class TasksScreen extends ConsumerWidget {
@@ -157,9 +162,9 @@ class _TaskCard extends ConsumerWidget {
               extra > 0
                   ? 'Base ${template.baseMinutes} min + $extra min por '
                       'condiciones (ponderado: '
-                      '${template.weightedMinutes.toStringAsFixed(0)} min)'
+                      '${weightedMinutesLabel(template.weightedMinutes)} min)'
                   : 'Base ${template.baseMinutes} min (ponderado: '
-                      '${template.weightedMinutes.toStringAsFixed(0)} min)',
+                      '${weightedMinutesLabel(template.weightedMinutes)} min)',
               style: theme.textTheme.bodySmall,
             ),
           ),

@@ -122,7 +122,8 @@ class _RoomCard extends ConsumerWidget {
             roomTypeLabels[room.type] ?? room.type,
             if (room.floor != null && room.floor!.isNotEmpty)
               'Piso ${room.floor}',
-            if (room.objectCount > 0) '${room.objectCount} objetos',
+            if (room.objectCount == 1) '1 objeto',
+            if (room.objectCount > 1) '${room.objectCount} objetos',
           ].join(' · '),
         ),
         trailing: const Icon(Icons.chevron_right, color: EquaColors.inkSoft),
