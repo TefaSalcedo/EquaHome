@@ -37,6 +37,7 @@ class HouseholdDetail(BaseModel):
 
 
 class MembershipOut(BaseModel):
+    id: uuid.UUID
     household_id: uuid.UUID
     household_name: str
     role: MemberRole

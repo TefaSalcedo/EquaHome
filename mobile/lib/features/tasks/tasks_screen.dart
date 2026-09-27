@@ -6,6 +6,7 @@ import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../design_system/colors.dart';
 import '../../design_system/theme.dart';
+import '../home/home_controller.dart';
 import '../house/house_controller.dart';
 import 'tasks_controller.dart';
 
@@ -190,6 +191,13 @@ class _TaskCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (template.active)
+                TextButton.icon(
+                  key: Key('today-${template.id}'),
+                  icon: const Icon(Icons.today_outlined, size: 18),
+                  label: const Text('Para hoy'),
+                  onPressed: () => _addToday(context, ref),
+                ),
               TextButton.icon(
                 icon: Icon(
                   template.active ? Icons.pause : Icons.play_arrow,
@@ -210,6 +218,24 @@ class _TaskCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _addToday(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref
+          .read(todayTasksProvider.notifier)
+          .addFromTemplate(template.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quedó para hoy — cada quien elige')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+      }
+    }
   }
 
   Future<void> _toggleCondition(

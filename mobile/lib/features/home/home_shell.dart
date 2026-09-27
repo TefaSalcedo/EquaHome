@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../house/house_screen.dart';
 import '../tasks/tasks_screen.dart';
 import 'home_screen.dart';
+import 'nav_provider.dart';
 
 /// Contenedor con navegación inferior: Inicio, Casa y Tareas.
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final index = ref.watch(navIndexProvider);
     return Scaffold(
       body: IndexedStack(
-        index: _index,
+        index: index,
         children: const [
           HomeScreen(),
           HouseScreen(),
@@ -27,8 +23,9 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        selectedIndex: index,
+        onDestinationSelected: (i) =>
+            ref.read(navIndexProvider.notifier).select(i),
         destinations: const [
           NavigationDestination(
             key: Key('navHome'),

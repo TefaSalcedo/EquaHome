@@ -15,6 +15,7 @@ router = APIRouter(prefix="/members", tags=["members"])
 
 def _membership_out(m: HouseholdMember) -> MembershipOut:
     return MembershipOut(
+        id=m.id,
         household_id=m.household_id,
         household_name=m.household.name,
         role=m.role,

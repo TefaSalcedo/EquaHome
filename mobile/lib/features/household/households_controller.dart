@@ -47,6 +47,17 @@ class HouseholdsController extends AsyncNotifier<List<Membership>> {
         .patch('/api/v1/members/me/households/$householdId/primary');
     ref.invalidateSelf();
   }
+
+  /// Actualiza el perfil de miembro en el hogar activo
+  /// (disponibilidad, tipo, capacidad, habitaciones asignadas).
+  Future<void> updateMemberProfile(Map<String, dynamic> data) async {
+    final hid = ref.read(activeMembershipProvider)!.householdId;
+    await ref
+        .read(dioProvider)
+        .patch('/api/v1/members/me/households/$hid/profile', data: data);
+    ref.invalidateSelf();
+    ref.invalidate(householdDetailProvider);
+  }
 }
 
 /// Hogar activo: por defecto la residencia principal (o la primera).
