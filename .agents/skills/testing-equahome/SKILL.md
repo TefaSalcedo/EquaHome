@@ -27,3 +27,9 @@ description: How to run and E2E-test the EquaHome monorepo (FastAPI backend + Fl
 
 ## Devin Secrets Needed
 - none (all local, no external credentials).
+
+## Fases 05–06 (plan diario, calendario, fotos)
+- Al abrir Inicio (o GET /tasks?date=hoy) el backend materializa el día: plantillas activas → tareas propuestas (diarias siempre; semanales en su día preferido ISO 1=lunes..7=domingo, lunes por defecto; mensuales en el día del mes de creación; una-vez solo la primera vez).
+- Carry-over: pendientes/seleccionadas/saltadas de días pasados reaparecen hoy como `carried_over` ("Viene de ayer"), sin duplicar y aún elegibles.
+- Barra inferior ahora tiene 4 pestañas: Inicio, Casa, Tareas, Calendario (key `navCalendar`). Calendario muestra la semana (flechas `prevWeek`/`nextWeek`), minutos por día y el plan del día seleccionado (solo lectura; seleccionar/completar se hace desde Inicio).
+- Fotos: en el detalle de una habitación, `scanRoomPhoto` abre el selector de archivos; tras subir se llama analyze automáticamente (mock AI: detecciones de ejemplo) y se abre una hoja para corregir objetos; `confirmAnalysis` los guarda como objetos de la habitación (source=ai). Uploads van a `backend/uploads/` (EQUAHOME_STORAGE_DIR); el proveedor IA es mock por defecto (EQUAHOME_AI_PROVIDER).
