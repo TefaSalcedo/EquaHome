@@ -38,6 +38,7 @@ class RoomDetailScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'addObject',
         key: const Key('addObject'),
         onPressed: () => _showObjectForm(context, ref),
         icon: const Icon(Icons.add),

@@ -33,6 +33,7 @@ class HouseScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mi casa')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'addRoom',
         key: const Key('addRoom'),
         onPressed: () => _showRoomForm(context, ref),
         icon: const Icon(Icons.add),

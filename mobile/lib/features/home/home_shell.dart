@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../calendar/calendar_screen.dart';
 import '../house/house_screen.dart';
 import '../tasks/tasks_screen.dart';
+import 'home_controller.dart';
 import 'home_screen.dart';
 import 'nav_provider.dart';
 
@@ -26,8 +27,15 @@ class HomeShell extends ConsumerWidget {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (i) =>
-            ref.read(navIndexProvider.notifier).select(i),
+        onDestinationSelected: (i) {
+          ref.read(navIndexProvider.notifier).select(i);
+          // Al volver a Inicio refresca: el plan del día pudo materializar
+          // tareas nuevas (plantillas creadas en Tareas, carry-over, etc.).
+          if (i == 0) {
+            ref.invalidate(todayTasksProvider);
+            ref.invalidate(loadProvider);
+          }
+        },
         destinations: const [
           NavigationDestination(
             key: Key('navHome'),
