@@ -436,3 +436,115 @@ class LoadSuggestion {
   final double deficitMinutes;
   final List<DayTask> candidates;
 }
+
+/// Un día de la vista semanal.
+class WeekDay {
+  const WeekDay({
+    required this.date,
+    required this.totalMinutes,
+    required this.doneCount,
+    required this.tasks,
+  });
+
+  factory WeekDay.fromJson(Map<String, dynamic> json) => WeekDay(
+        date: json['date'] as String,
+        totalMinutes: (json['total_minutes'] as num).toDouble(),
+        doneCount: json['done_count'] as int,
+        tasks: (json['tasks'] as List)
+            .map((t) => DayTask.fromJson(t as Map<String, dynamic>))
+            .toList(),
+      );
+
+  final String date;
+  final double totalMinutes;
+  final int doneCount;
+  final List<DayTask> tasks;
+}
+
+class WeekResult {
+  const WeekResult({required this.start, required this.days});
+
+  factory WeekResult.fromJson(Map<String, dynamic> json) => WeekResult(
+        start: json['start'] as String,
+        days: (json['days'] as List)
+            .map((d) => WeekDay.fromJson(d as Map<String, dynamic>))
+            .toList(),
+      );
+
+  final String start;
+  final List<WeekDay> days;
+}
+
+/// Objeto detectado por la IA (borrador corregible).
+class DetectedObject {
+  const DetectedObject({required this.name, this.quantity = 1});
+
+  factory DetectedObject.fromJson(Map<String, dynamic> json) =>
+      DetectedObject(
+        name: json['name'] as String,
+        quantity: json['quantity'] as int? ?? 1,
+      );
+
+  final String name;
+  final int quantity;
+
+  Map<String, dynamic> toJson() => {'name': name, 'quantity': quantity};
+}
+
+class PhotoAnalysis {
+  const PhotoAnalysis({
+    required this.id,
+    required this.provider,
+    required this.summary,
+    required this.objects,
+    required this.confirmed,
+    this.model,
+  });
+
+  factory PhotoAnalysis.fromJson(Map<String, dynamic> json) => PhotoAnalysis(
+        id: json['id'] as String,
+        provider: json['provider'] as String,
+        model: json['model'] as String?,
+        summary: json['summary'] as String,
+        objects: (json['objects'] as List)
+            .map((o) => DetectedObject.fromJson(o as Map<String, dynamic>))
+            .toList(),
+        confirmed: json['confirmed_by_user'] as bool,
+      );
+
+  final String id;
+  final String provider;
+  final String? model;
+  final String summary;
+  final List<DetectedObject> objects;
+  final bool confirmed;
+}
+
+class HousePhoto {
+  const HousePhoto({
+    required this.id,
+    required this.purpose,
+    required this.aiStatus,
+    required this.fileUrl,
+    this.roomId,
+    this.analysis,
+  });
+
+  factory HousePhoto.fromJson(Map<String, dynamic> json) => HousePhoto(
+        id: json['id'] as String,
+        roomId: json['room_id'] as String?,
+        purpose: json['purpose'] as String,
+        aiStatus: json['ai_status'] as String,
+        fileUrl: json['file_url'] as String,
+        analysis: json['analysis'] == null
+            ? null
+            : PhotoAnalysis.fromJson(json['analysis'] as Map<String, dynamic>),
+      );
+
+  final String id;
+  final String? roomId;
+  final String purpose;
+  final String aiStatus;
+  final String fileUrl;
+  final PhotoAnalysis? analysis;
+}

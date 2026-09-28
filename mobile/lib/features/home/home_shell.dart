@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../calendar/calendar_screen.dart';
 import '../house/house_screen.dart';
 import '../tasks/tasks_screen.dart';
+import 'home_controller.dart';
 import 'home_screen.dart';
 import 'nav_provider.dart';
 
-/// Contenedor con navegación inferior: Inicio, Casa y Tareas.
+/// Contenedor con navegación inferior: Inicio, Casa, Tareas y Calendario.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
 
@@ -20,12 +22,20 @@ class HomeShell extends ConsumerWidget {
           HomeScreen(),
           HouseScreen(),
           TasksScreen(),
+          CalendarScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (i) =>
-            ref.read(navIndexProvider.notifier).select(i),
+        onDestinationSelected: (i) {
+          ref.read(navIndexProvider.notifier).select(i);
+          // Al volver a Inicio refresca: el plan del día pudo materializar
+          // tareas nuevas (plantillas creadas en Tareas, carry-over, etc.).
+          if (i == 0) {
+            ref.invalidate(todayTasksProvider);
+            ref.invalidate(loadProvider);
+          }
+        },
         destinations: const [
           NavigationDestination(
             key: Key('navHome'),
@@ -44,6 +54,12 @@ class HomeShell extends ConsumerWidget {
             icon: Icon(Icons.checklist_outlined),
             selectedIcon: Icon(Icons.checklist),
             label: 'Tareas',
+          ),
+          NavigationDestination(
+            key: Key('navCalendar'),
+            icon: Icon(Icons.calendar_view_week_outlined),
+            selectedIcon: Icon(Icons.calendar_view_week),
+            label: 'Calendario',
           ),
         ],
       ),

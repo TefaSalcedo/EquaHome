@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     invite_code_length: int = 8
     invite_expiry_days: int = 7
+    storage_dir: str = "./uploads"
+    ai_provider: str = "mock"
 
 
 settings = Settings()

@@ -143,6 +143,18 @@ class LoadSuggestion(BaseModel):
     candidates: list[TaskOut]
 
 
+class WeekDay(BaseModel):
+    date: date
+    total_minutes: float
+    done_count: int
+    tasks: list[TaskOut]
+
+
+class WeekOut(BaseModel):
+    start: date
+    days: list[WeekDay]
+
+
 class LoadOut(BaseModel):
     date: date
     single_member: bool

@@ -13,6 +13,10 @@ class ImageStorage(ABC):
         """Store bytes and return the storage key."""
 
     @abstractmethod
+    def load(self, storage_key: str) -> bytes:
+        """Return the stored bytes (for AI analysis or downloads)."""
+
+    @abstractmethod
     def get_url(self, storage_key: str) -> str:
         """Return a URL (signed when needed) to fetch the object."""
 
