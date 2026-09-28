@@ -61,20 +61,28 @@ class SelectedHousehold extends Notifier<String?> {
   void select(String householdId) => state = householdId;
 }
 
-/// Detalle del hogar activo (miembros incluidos).
-final householdDetailProvider = FutureProvider<HouseholdDetail>((ref) async {
-  final memberships = await ref.watch(householdsControllerProvider.future);
-  if (memberships.isEmpty) {
-    throw StateError('Sin hogar');
-  }
+/// Membresía del hogar activo: el seleccionado, o la residencia principal,
+/// o el primero de la lista.
+final activeMembershipProvider = Provider<Membership?>((ref) {
+  final memberships =
+      ref.watch(householdsControllerProvider).value ?? const <Membership>[];
+  if (memberships.isEmpty) return null;
   final selected = ref.watch(selectedHouseholdProvider);
-  final active = memberships.firstWhere(
+  return memberships.firstWhere(
     (m) => m.householdId == selected,
     orElse: () => memberships.firstWhere(
       (m) => m.isPrimary,
       orElse: () => memberships.first,
     ),
   );
+});
+
+/// Detalle del hogar activo (miembros incluidos).
+final householdDetailProvider = FutureProvider<HouseholdDetail>((ref) async {
+  final active = ref.watch(activeMembershipProvider);
+  if (active == null) {
+    throw StateError('Sin hogar');
+  }
   final res =
       await ref.read(dioProvider).get('/api/v1/households/${active.householdId}');
   return HouseholdDetail.fromJson(res.data as Map<String, dynamic>);
