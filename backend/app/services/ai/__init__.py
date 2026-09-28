@@ -1,18 +1,19 @@
 """Fábrica del proveedor de IA.
 
-EQUAHOME_AI_PROVIDER=mock (default) usa detecciones de ejemplo; "grok" se
-conecta en la fase 07. El resto de la app solo conoce la interfaz AIService.
+EQUAHOME_AI_PROVIDER=mock (default) usa detecciones de ejemplo; "groq" usa
+la API real de Groq (EQUAHOME_GROQ_API_KEY). El resto de la app solo
+conoce la interfaz AIService.
 """
 
 from app.core.config import settings
 from app.services.ai.base import AIService
-from app.services.ai.grok import GrokService
+from app.services.ai.groq import GroqService
 from app.services.ai.mock import MockAIService
 
 
 def get_ai_service() -> AIService:
-    if settings.ai_provider == "grok":
-        return GrokService()
+    if settings.ai_provider == "groq":
+        return GroqService()
     if settings.ai_provider == "mock":
         return MockAIService()
     raise NotImplementedError(

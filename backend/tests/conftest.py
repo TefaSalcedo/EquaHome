@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("EQUAHOME_JWT_SECRET", "test-secret")
+os.environ["EQUAHOME_AI_PROVIDER"] = "mock"
 
 import app.models  # noqa: E402,F401 — register tables
 from app.core.db import Base, get_db  # noqa: E402

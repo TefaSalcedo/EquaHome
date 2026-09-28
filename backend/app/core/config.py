@@ -13,9 +13,10 @@ class Settings(BaseSettings):
     invite_expiry_days: int = 7
     storage_dir: str = "./uploads"
     ai_provider: str = "mock"
-    grok_api_key: str = ""
-    grok_model: str = ""
-    grok_base_url: str = "https://api.x.ai/v1"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
 
 
 settings = Settings()

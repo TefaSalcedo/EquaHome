@@ -116,15 +116,13 @@ def test_week_never_materializes_before_template_creation(client):
 
     resp = client.get(f"/api/v1/households/{hid}/week", headers=auth(tokens))
     assert resp.status_code == 200
+    today_iso = date.today().isoformat()
+    # Los días de la semana ANTERIORES a hoy no tienen la tarea; hoy y los
+    # siguientes sí (una sola vez cada uno).
     for day in resp.json()["days"]:
         count = sum(t["title"] == "Fregar platos" for t in day["tasks"])
-        assert count <= 1
-    total = sum(
-        t["title"] == "Fregar platos"
-        for d in resp.json()["days"]
-        for t in d["tasks"]
-    )
-    assert total == 1
+        assert count == (0 if day["date"] < today_iso else 1)
+    expected = sum(1 for d in resp.json()["days"] if d["date"] >= today_iso)
     # Volver a pedir la semana tras el carry no duplica.
     resp = client.get(f"/api/v1/households/{hid}/week", headers=auth(tokens))
     total = sum(
@@ -132,7 +130,7 @@ def test_week_never_materializes_before_template_creation(client):
         for d in resp.json()["days"]
         for t in d["tasks"]
     )
-    assert total == 1
+    assert total == expected
 
 
 def test_week_endpoint_returns_seven_days(client):
