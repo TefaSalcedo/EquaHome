@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     invite_expiry_days: int = 7
     storage_dir: str = "./uploads"
     ai_provider: str = "mock"
+    grok_api_key: str = ""
+    grok_model: str = ""
+    grok_base_url: str = "https://api.x.ai/v1"
 
 
 settings = Settings()

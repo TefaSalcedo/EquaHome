@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    assistant,
     auth,
     households,
     members,
@@ -18,3 +19,4 @@ api_router.include_router(rooms.router)
 api_router.include_router(task_templates.router)
 api_router.include_router(tasks.router)
 api_router.include_router(photos.router)
+api_router.include_router(assistant.router)

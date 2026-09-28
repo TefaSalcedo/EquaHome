@@ -6,10 +6,13 @@ conecta en la fase 07. El resto de la app solo conoce la interfaz AIService.
 
 from app.core.config import settings
 from app.services.ai.base import AIService
+from app.services.ai.grok import GrokService
 from app.services.ai.mock import MockAIService
 
 
 def get_ai_service() -> AIService:
+    if settings.ai_provider == "grok":
+        return GrokService()
     if settings.ai_provider == "mock":
         return MockAIService()
     raise NotImplementedError(
