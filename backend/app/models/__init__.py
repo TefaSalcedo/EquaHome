@@ -1,6 +1,6 @@
 from app.models.household import Household, HouseholdInvitation, HouseholdMember
 from app.models.room import Room, RoomObject
-from app.models.task import TaskCondition, TaskTemplate
+from app.models.task import Task, TaskAssignment, TaskCondition, TaskPreference, TaskTemplate
 from app.models.user import User
 
 __all__ = [
@@ -12,4 +12,7 @@ __all__ = [
     "RoomObject",
     "TaskTemplate",
     "TaskCondition",
+    "Task",
+    "TaskAssignment",
+    "TaskPreference",
 ]

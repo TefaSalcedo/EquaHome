@@ -20,6 +20,7 @@ class EquaUser {
 
 class Membership {
   const Membership({
+    required this.memberId,
     required this.householdId,
     required this.householdName,
     required this.role,
@@ -32,6 +33,7 @@ class Membership {
   });
 
   factory Membership.fromJson(Map<String, dynamic> json) => Membership(
+        memberId: json['id'] as String,
         householdId: json['household_id'] as String,
         householdName: json['household_name'] as String,
         role: json['role'] as String,
@@ -43,6 +45,7 @@ class Membership {
         roomScope: (json['room_scope'] as List?)?.cast<String>(),
       );
 
+  final String memberId;
   final String householdId;
   final String householdName;
   final String role;
@@ -251,4 +254,185 @@ class TaskTemplate {
   final List<TaskCondition> conditions;
   final int estimatedMinutes;
   final double weightedMinutes;
+}
+
+/// Fase 04: tareas concretas del día, selección voluntaria y carga.
+class Assignee {
+  const Assignee({
+    required this.memberId,
+    required this.displayName,
+    this.completedAt,
+  });
+
+  factory Assignee.fromJson(Map<String, dynamic> json) => Assignee(
+        memberId: json['member_id'] as String,
+        displayName: json['display_name'] as String,
+        completedAt: json['completed_at'] as String?,
+      );
+
+  final String memberId;
+  final String displayName;
+  final String? completedAt;
+}
+
+class DayTask {
+  const DayTask({
+    required this.id,
+    required this.title,
+    required this.estimatedMinutes,
+    required this.weightedMinutes,
+    required this.effort,
+    required this.category,
+    required this.scheduledDate,
+    required this.status,
+    required this.origin,
+    required this.assignees,
+    this.roomId,
+    this.roomName,
+    this.templateId,
+  });
+
+  factory DayTask.fromJson(Map<String, dynamic> json) => DayTask(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        estimatedMinutes: json['estimated_minutes'] as int,
+        weightedMinutes: (json['weighted_minutes'] as num).toDouble(),
+        effort: json['effort'] as String,
+        category: json['category'] as String,
+        roomId: json['room_id'] as String?,
+        roomName: json['room_name'] as String?,
+        templateId: json['template_id'] as String?,
+        scheduledDate: json['scheduled_date'] as String,
+        status: json['status'] as String,
+        origin: json['origin'] as String,
+        assignees: (json['assignees'] as List)
+            .map((a) => Assignee.fromJson(a as Map<String, dynamic>))
+            .toList(),
+      );
+
+  final String id;
+  final String title;
+  final int estimatedMinutes;
+  final double weightedMinutes;
+  final String effort;
+  final String category;
+  final String? roomId;
+  final String? roomName;
+  final String? templateId;
+  final String scheduledDate;
+  final String status;
+  final String origin;
+  final List<Assignee> assignees;
+
+  bool isAssignedTo(String memberId) =>
+      assignees.any((a) => a.memberId == memberId);
+}
+
+class TaskPreference {
+  const TaskPreference({
+    required this.id,
+    required this.kind,
+    this.templateId,
+    this.category,
+    this.templateName,
+  });
+
+  factory TaskPreference.fromJson(Map<String, dynamic> json) => TaskPreference(
+        id: json['id'] as String,
+        kind: json['kind'] as String,
+        templateId: json['template_id'] as String?,
+        category: json['category'] as String?,
+        templateName: json['template_name'] as String?,
+      );
+
+  final String id;
+  final String kind;
+  final String? templateId;
+  final String? category;
+  final String? templateName;
+}
+
+class MemberLoad {
+  const MemberLoad({
+    required this.memberId,
+    required this.displayName,
+    required this.assignedMinutes,
+    required this.capacityFactor,
+    this.expectedMinutes,
+    this.differenceMinutes,
+    this.weeklyMinutes,
+  });
+
+  factory MemberLoad.fromJson(Map<String, dynamic> json) => MemberLoad(
+        memberId: json['member_id'] as String,
+        displayName: json['display_name'] as String,
+        assignedMinutes: (json['assigned_minutes'] as num).toDouble(),
+        expectedMinutes: (json['expected_minutes'] as num?)?.toDouble(),
+        differenceMinutes: (json['difference_minutes'] as num?)?.toDouble(),
+        weeklyMinutes: json['weekly_minutes'] as int?,
+        capacityFactor: (json['capacity_factor'] as num).toDouble(),
+      );
+
+  final String memberId;
+  final String displayName;
+  final double assignedMinutes;
+  final double? expectedMinutes;
+  final double? differenceMinutes;
+  final int? weeklyMinutes;
+  final double capacityFactor;
+}
+
+class LoadResult {
+  const LoadResult({
+    required this.date,
+    required this.singleMember,
+    required this.totalMinutes,
+    required this.members,
+    this.suggestion,
+    this.notice,
+  });
+
+  factory LoadResult.fromJson(Map<String, dynamic> json) => LoadResult(
+        date: json['date'] as String,
+        singleMember: json['single_member'] as bool,
+        totalMinutes: (json['total_minutes'] as num).toDouble(),
+        members: (json['members'] as List)
+            .map((m) => MemberLoad.fromJson(m as Map<String, dynamic>))
+            .toList(),
+        suggestion: json['suggestion'] == null
+            ? null
+            : LoadSuggestion.fromJson(
+                json['suggestion'] as Map<String, dynamic>),
+        notice: json['notice'] as String?,
+      );
+
+  final String date;
+  final bool singleMember;
+  final double totalMinutes;
+  final List<MemberLoad> members;
+  final LoadSuggestion? suggestion;
+  final String? notice;
+}
+
+class LoadSuggestion {
+  const LoadSuggestion({
+    required this.memberId,
+    required this.displayName,
+    required this.deficitMinutes,
+    required this.candidates,
+  });
+
+  factory LoadSuggestion.fromJson(Map<String, dynamic> json) => LoadSuggestion(
+        memberId: json['member_id'] as String,
+        displayName: json['display_name'] as String,
+        deficitMinutes: (json['deficit_minutes'] as num).toDouble(),
+        candidates: (json['candidates'] as List)
+            .map((t) => DayTask.fromJson(t as Map<String, dynamic>))
+            .toList(),
+      );
+
+  final String memberId;
+  final String displayName;
+  final double deficitMinutes;
+  final List<DayTask> candidates;
 }
